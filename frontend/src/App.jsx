@@ -238,7 +238,7 @@ function App() {
                                 <ChannelFilter
                                     data={data}
                                     onBack={() => setData(null)}
-                                    onBatchDownload={handleBatchStarted}
+                                    onBatchDownloadStarted={handleBatchStarted}
                                     onFetchPage={fetchChannelData}
                                     socket={socket} // Pass socket
                                     apiUrl={apiUrl} // Pass apiUrl
