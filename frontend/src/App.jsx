@@ -1,44 +1,77 @@
-import { useState, useEffect } from 'react';
-import { LayoutDashboard, Activity, Zap } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { LayoutDashboard, Activity, Zap, Settings, Save, X } from 'lucide-react';
 import io from 'socket.io-client';
 import Home from './components/Home';
 import ChannelFilter from './components/ChannelFilter';
 import ProcessingTab from './components/ProcessingTab';
 import VideoOptions from './components/VideoOptions';
 
-export const socket = io('http://localhost:5000');
-
 function App() {
+    // Persistent State for API URL
+    const [apiUrl, setApiUrl] = useState(() => {
+        return localStorage.getItem('API_BASE_URL') || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    });
+    const [showSettings, setShowSettings] = useState(false);
+
+    // Socket State
+    const [socket, setSocket] = useState(null);
+    const [isConnected, setIsConnected] = useState(false);
+
     const [activeTab, setActiveTab] = useState('dashboard');
     const [data, setData] = useState(null);
     const [tasks, setTasks] = useState({});
 
+    // Initialize Socket when apiUrl changes
     useEffect(() => {
-        socket.on('progress', (msg) => {
+        // Disconnect previous
+        if (socket) socket.disconnect();
+
+        console.log(`Connecting to socket at: ${apiUrl}`);
+        const newSocket = io(apiUrl);
+
+        newSocket.on('connect', () => {
+            console.log("Socket connected:", newSocket.id);
+            setIsConnected(true);
+        });
+
+        newSocket.on('disconnect', () => setIsConnected(false));
+
+        newSocket.on('progress', (msg) => {
             setTasks(prev => ({
                 ...prev,
                 [msg.taskId]: { ...prev[msg.taskId], ...msg }
             }));
         });
 
-        return () => socket.off('progress');
-    }, []);
+        setSocket(newSocket);
+
+        return () => {
+            newSocket.disconnect();
+        };
+    }, [apiUrl]);
+
+    // Function to update API URL
+    const updateApiUrl = (newUrl) => {
+        let cleaned = newUrl.replace(/\/$/, ""); // Remove trailing slash
+        setApiUrl(cleaned);
+        localStorage.setItem('API_BASE_URL', cleaned);
+        setShowSettings(false);
+        // Reset data/tabs on switch? Maybe not needed.
+    };
 
     const fetchChannelData = async (url, page = 1, tab = 'videos') => {
         setData(prev => ({
             ...prev,
             loading: true,
-            url: url, // Ensure URL is preserved
-            current_tab: tab, // Optimistic update
+            url: url,
+            current_tab: tab,
             page: page
         }));
 
-        // Switch to dashboard if not already there
         setActiveTab('dashboard');
 
         try {
-            // Use tab parameter for server-side filtering
-            const response = await fetch('http://localhost:5000/api/info', {
+            const response = await fetch(`${apiUrl}/api/info`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url, page, tab })
@@ -50,37 +83,21 @@ function App() {
             setData(prev => ({
                 ...result,
                 loading: false,
-                // Ensure client-side state consistency
                 current_tab: tab,
                 page: page
             }));
         } catch (e) {
             console.error("Fetch failed", e);
-            // Reset loading but keep basic info if possible or show error
             setData(prev => ({ ...prev, loading: false }));
+            // Maybe show a toast error? "Failed to connect to backend"
         }
     };
 
-    // Effect to trigger initial load if passed data is 'loading' skeleton
     useEffect(() => {
         if (data && data.loading && data.url && (!data.videos || data.videos.length === 0)) {
-            // Only fetch if we really don't have videos yet (prevent loops)
-            // But wait, the instant switch sets loading: true and videos: []
-            // So we should fetch.
             fetchChannelData(data.url, 1, 'videos');
         }
-    }, [data?.url]); // Dependency on URL ensures check happens
-
-    const startDownload = (ids, titlePlaceholder) => {
-        const newTasks = {};
-        ids.forEach(id => {
-            const taskId = typeof id === 'string' && id.includes('-') ? id : `task_${Date.now()}_${Math.random()}`; // Simple ID gen if needed, but backend often generates task_ids for single downloads?
-            // The ChannelFilter generates task IDs via batch endpoint.
-            // VideoOptions (single download) needs handling.
-            // Actually VideoOptions receives onDownloadStarted which passes taskIds.
-        });
-        setActiveTab('processing');
-    };
+    }, [data?.url]);
 
     const handleBatchStarted = (taskIds, batchTitle) => {
         const newTasks = { ...tasks };
@@ -88,8 +105,8 @@ function App() {
             newTasks[id] = {
                 status: 'queued',
                 progress: 0,
-                thumbnail: null, // Could look up from data.videos
-                title: 'Queued Video', // Placeholder until update
+                thumbnail: null,
+                title: 'Queued Video',
                 taskId: id
             };
         });
@@ -103,8 +120,8 @@ function App() {
             [taskId]: {
                 status: 'queued',
                 progress: 0,
-                thumbnail: thumbnail, // Could be improved
-                title: title, // Passed from Options
+                thumbnail: thumbnail,
+                title: title,
                 taskId: taskId
             }
         }));
@@ -113,6 +130,42 @@ function App() {
 
     return (
         <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
+            {/* Settings Modal */}
+            {showSettings && (
+                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-[#121212] border border-white/10 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-scale-in">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                <Settings size={20} className="text-gray-400" /> Settings
+                            </h3>
+                            <button onClick={() => setShowSettings(false)} className="bg-white/5 p-2 rounded-full hover:bg-white/10 transition">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Backend API URL</label>
+                                <form onSubmit={(e) => { e.preventDefault(); updateApiUrl(e.target.url.value); }}>
+                                    <input
+                                        name="url"
+                                        defaultValue={apiUrl}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-blue-500 transition text-white"
+                                        placeholder="https://your-backend.hf.space"
+                                    />
+                                    <div className="text-[10px] text-gray-500 mt-2 flex items-center gap-2">
+                                        Status: {isConnected ? <span className="text-green-500">Video Server Connected</span> : <span className="text-red-500">Disconnected</span>}
+                                    </div>
+                                    <button type="submit" className="w-full mt-4 btn-primary py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                                        <Save size={18} /> Save & Reconnect
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Desktop Sidebar */}
             <div className="hidden md:flex flex-col rounded-4xl w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 h-full fixed left-0 top-0 z-50">
                 <div className="p-8 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
@@ -146,14 +199,20 @@ function App() {
                     </button>
                 </nav>
 
-                <div className="p-4 border-t border-white/5">
-                    <div className="text-xs text-gray-500 text-center">
+                <div className="p-4 border-t border-white/5 space-y-2">
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all text-sm font-medium"
+                    >
+                        <Settings size={18} /> Backend Settings
+                    </button>
+                    <div className="text-xs text-gray-500 text-center pt-2">
                         Made by <a href="https://github.com/helo-ayush" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">helo-ayush</a>
                     </div>
                 </div>
             </div>
 
-            {/* Mobile Content Wrapper (mb-16 for bottom nav) */}
+            {/* Mobile Content Wrapper */}
             <main className="flex-1 md:ml-64 h-full overflow-hidden relative pb-20 md:pb-0">
                 {/* Background ambient lighting */}
                 <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
@@ -163,6 +222,14 @@ function App() {
 
                 {/* Content Area */}
                 <div className="h-full overflow-y-auto custom-scrollbar relative z-10 p-4 md:p-8">
+                    {/* Mobile Settings Button (Top Right) */}
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="md:hidden absolute top-4 right-4 z-50 p-2 bg-black/50 backdrop-blur-md rounded-full text-gray-400 border border-white/10"
+                    >
+                        <Settings size={20} />
+                    </button>
+
                     {activeTab === 'dashboard' && (
                         !data ? (
                             <Home onInfoFetched={(info) => { setData(info); }} />
@@ -173,12 +240,16 @@ function App() {
                                     onBack={() => setData(null)}
                                     onBatchDownload={handleBatchStarted}
                                     onFetchPage={fetchChannelData}
+                                    socket={socket} // Pass socket
+                                    apiUrl={apiUrl} // Pass apiUrl
                                 />
                             ) : (
                                 <VideoOptions
                                     data={data}
                                     onBack={() => setData(null)}
                                     onDownloadStarted={handleSingleDownloadStarted}
+                                    socket={socket} // Pass socket
+                                    apiUrl={apiUrl} // Pass apiUrl
                                 />
                             )
                         )

@@ -1,31 +1,26 @@
 import { useState } from 'react';
 import { Download, ArrowLeft, Monitor, FileVideo, Check, Film } from 'lucide-react';
 
-import { socket } from '../App';
-
-const VideoOptions = ({ data, onDownloadStarted, onBack }) => {
+const VideoOptions = ({ data, onDownloadStarted, onBack, socket, apiUrl }) => {
     const [selectedFormat, setSelectedFormat] = useState(null);
     const [downloading, setDownloading] = useState(false);
 
-    const startDownload = async () => {
+    const startDownload = () => {
         if (!selectedFormat) return;
         setDownloading(true);
-        try {
-            const res = await fetch('http://localhost:5000/api/download', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    url: data.original_url,
-                    format_id: selectedFormat.format_id,
-                    sid: socket.id // Send socket ID for tracking
-                })
-            });
-            const respData = await res.json();
-            onDownloadStarted(respData.taskId, data.title);
-        } catch (e) {
-            console.error(e);
-            setDownloading(false);
-        }
+
+        const taskId = crypto.randomUUID();
+        // Use passed apiUrl and socket
+        const streamUrl = `${apiUrl}/stream?url=${encodeURIComponent(data.original_url)}&format_id=${selectedFormat.format_id}&taskId=${taskId}&sid=${socket?.id}`;
+
+        // Notify parent to show card immediately
+        onDownloadStarted(taskId, data.title);
+
+        // Trigger Direct Download
+        window.location.href = streamUrl;
+
+        // Reset state after a delay (browser handles the download)
+        setTimeout(() => setDownloading(false), 2000);
     };
 
     return (

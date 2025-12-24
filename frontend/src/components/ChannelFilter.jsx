@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Download, ArrowLeft, CheckSquare, ChevronLeft, ChevronRight, Filter, Settings, X, Check, PlayCircle, CloudCheck, FolderCheck, SquareSlash, SquareDashed, SquareX, SquareCheck } from 'lucide-react';
 
-import { socket } from '../App';
 
-const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) => {
+
+const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage, socket, apiUrl }) => {
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [downloading, setDownloading] = useState(false);
 
@@ -64,13 +64,13 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
         const qualityCap = isMaxQuality ? null : selectedCap;
 
         try {
-            const res = await fetch('http://localhost:5000/api/batch_download', {
+            const res = await fetch(`${apiUrl}/api/batch_download`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     urls: urlsToDownload,
                     quality_cap: qualityCap,
-                    sid: socket.id // Send socket ID for tracking
+                    sid: socket?.id // Send socket ID for tracking
                 })
             });
             const respData = await res.json();
