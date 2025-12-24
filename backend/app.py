@@ -368,7 +368,9 @@ def download():
              if tid in task_control:
                  del task_control[tid]
 
-    socketio.start_background_task(target=download_task, tid=task_id, link=url, fmt=format_id)
+    # Use native threading instead of socketio.start_background_task for gunicorn compatibility
+    thread = threading.Thread(target=download_task, args=(task_id, url, format_id), daemon=True)
+    thread.start()
     return jsonify({'taskId': task_id, 'status': 'started'})
 
 @app.route('/api/batch_formats', methods=['POST'])
@@ -472,7 +474,9 @@ def batch_download():
                     if tid in task_control:
                         del task_control[tid]
 
-        socketio.start_background_task(target=download_task, tid=task_id, link=url, q_cap=quality_cap)
+        # Use native threading for gunicorn compatibility
+        thread = threading.Thread(target=download_task, args=(task_id, url, quality_cap), daemon=True)
+        thread.start()
 
     return jsonify({'taskIds': task_ids, 'status': 'batch_started'})
 
