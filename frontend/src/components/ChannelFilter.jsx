@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, ArrowLeft, CheckSquare, ChevronLeft, ChevronRight, Filter, Settings, X, Check, PlayCircle } from 'lucide-react';
+import { Download, ArrowLeft, CheckSquare, ChevronLeft, ChevronRight, Filter, Settings, X, Check, PlayCircle, CloudCheck, FolderCheck, SquareSlash, SquareDashed, SquareX, SquareCheck } from 'lucide-react';
 
 import { socket } from '../App';
 
@@ -88,7 +88,7 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                     <div className="w-20 h-20 border-4 border-red-500/30 rounded-full animate-ping absolute inset-0" />
                     <div className="w-20 h-20 border-4 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin relative z-10" />
                 </div>
-                <h2 className="text-2xl font-bold mt-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Fetching Channel...</h2>
+                <h2 className="text-2xl font-bold mt-8 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Fetching...</h2>
                 <p className="text-gray-500 mt-2 font-medium tracking-wide text-sm">LOADING {currentTab.toUpperCase()} CONTENT</p>
             </div>
         );
@@ -120,22 +120,18 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                         </div>
                     </div>
 
-                    {/* Premium Tab Switcher */}
-                    <div className="flex bg-black/60 rounded-xl p-1 border border-white/10 shadow-inner w-full md:w-auto">
+                    {/* Modern Pill Switcher */}
+                    <div className="flex bg-[#0f0f0f] rounded-full p-1 border border-white/10 w-full md:w-auto overflow-hidden relative">
                         {['videos', 'shorts'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => handleTabChange(tab)}
-                                className={`relative flex-1 md:flex-none justify-center px-4 md:px-6 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all duration-300 overflow-hidden group flex items-center gap-2
+                                className={`relative flex-1 md:flex-none cursor-pointer justify-center px-6 py-2 m-1/2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center gap-2
                                     ${currentTab === tab
-                                        ? 'text-white shadow-lg'
-                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                                        ? 'bg-[#1b1b1b] text-white shadow-lg shadow-gray-900/40'
+                                        : 'text-gray-500 hover:text-white hover:bg-white/5'
                                     }`}
                             >
-                                {currentTab === tab && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-500 rounded-lg -z-10 animate-fade-in" />
-                                )}
-                                {tab === 'videos' ? <PlayCircle size={12} className={`md:w-[14px] md:h-[14px] ${currentTab === tab ? "fill-white/20" : ""}`} /> : <Filter size={12} className="md:w-[14px] md:h-[14px]" />}
                                 {tab}
                             </button>
                         ))}
@@ -165,8 +161,8 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                                     onClick={() => toggleSelection(video.id)}
                                     className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500
                                 ${selectedIds.has(video.id)
-                                            ? 'ring-2 ring-red-500 shadow-2xl shadow-red-900/40 transform scale-[1.02] z-10'
-                                            : 'hover:transform hover:scale-[1.03] hover:shadow-2xl hover:shadow-black/50 hover:z-10 border border-white/5 hover:border-white/20 bg-black/20 hover:bg-white/5'}`}
+                                            ? 'ring-2 ring-[#ffc18a62] bg-[#ffc18a14] shadow-2xl shadow-red-900/40 transform scale-[1.02] z-10'
+                                            : 'hover:transform ring-2 ring-[#8080805a] hover:scale-[1.03] hover:shadow-2xl hover:shadow-black/50 hover:z-10 bg-black/20 hover:bg-white/5'}`}
                                 >
                                     {/* Thumbnail Container */}
                                     <div className="aspect-video bg-gray-900 relative overflow-hidden">
@@ -179,7 +175,7 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                                             />
                                         ) : (
                                             <div className="w-full h-full flex flex-col items-center justify-center text-gray-600 bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-                                                <PlayCircle size={48} className="opacity-30 mb-3 group-hover:text-red-500/50 transition-colors" />
+                                                <SquareX size={48} className="opacity-30 mb-3 group-hover:text-red-500/50 transition-colors" />
                                                 <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">No Preview</span>
                                             </div>
                                         )}
@@ -189,10 +185,10 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
 
                                         {/* Hover Play Button Overlay */}
                                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-50 group-hover:scale-100">
-                                            <div className="w-12 h-12 rounded-full bg-red-600/90 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-red-600/40">
+                                            <div className="w-12 h-12 rounded-full bg-gray-900/10 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-red-600/40">
                                                 {selectedIds.has(video.id)
-                                                    ? <CheckSquare className="text-white fill-current" size={20} />
-                                                    : <PlayCircle className="text-white fill-white" size={24} />
+                                                    ? <SquareX className="text-white" size={20} />
+                                                    : <FolderCheck className="text-white" size={20} />
                                                 }
                                             </div>
                                         </div>
@@ -214,8 +210,8 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
 
                                         {/* Selection Indicator (Constant) */}
                                         <div className={`absolute top-2 left-2 transition-all duration-200 z-20 ${selectedIds.has(video.id) ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
-                                            <div className="rounded-lg shadow-lg bg-red-600 text-white p-1.5 shadow-red-600/30">
-                                                <CheckSquare size={16} className="fill-current" />
+                                            <div className="rounded-lg shadow-lg bg-[#37373733] text-white p-1.5">
+                                                <FolderCheck size={16} className="" />
                                             </div>
                                         </div>
                                     </div>
@@ -231,7 +227,7 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                                     </div>
 
                                     {/* Bottom highlight line */}
-                                    <div className={`h-1 w-full transition-all duration-300 ${selectedIds.has(video.id) ? 'bg-red-600' : 'bg-transparent group-hover:bg-white/10'}`} />
+                                    {/* <div className={`h-1 w-full transition-all duration-300 ${selectedIds.has(video.id) ? 'bg-red-600' : 'bg-transparent group-hover:bg-white/10'}`} /> */}
                                 </div>
                             ))}
                         </div>
@@ -291,7 +287,7 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                         <button
                             onClick={() => handlePageChange('prev')}
                             disabled={data.page <= 1 || data.loading}
-                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white disabled:opacity-20 disabled:hover:bg-transparent transition-all hover:scale-105 active:scale-95"
+                            className="w-10 h-10 cursor-pointer flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 disabled:cursor-default text-white disabled:opacity-20 disabled:hover:bg-transparent transition-all hover:scale-105 active:scale-95"
                         >
                             <ChevronLeft size={18} />
                         </button>
@@ -301,7 +297,7 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                         <button
                             onClick={() => handlePageChange('next')}
                             disabled={!data.has_more || data.loading}
-                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white disabled:opacity-20 disabled:hover:bg-transparent transition-all hover:scale-105 active:scale-95"
+                            className="w-10 h-10 cursor-pointer flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white disabled:opacity-20 disabled:cursor-default disabled:hover:bg-transparent transition-all hover:scale-105 active:scale-95"
                         >
                             <ChevronRight size={18} />
                         </button>
@@ -311,7 +307,7 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                         {/* Settings Button */}
                         <button
                             onClick={() => setShowSettings(!showSettings)}
-                            className={`w-12 h-10 md:h-12 flex items-center justify-center rounded-xl transition-all duration-300 md:mr-2 group flex-shrink-0
+                            className={`w-12 h-10 md:h-12 flex items-center cursor-pointer justify-center rounded-xl transition-all duration-300 md:mr-2 group flex-shrink-0
                             ${showSettings ? 'bg-white text-black' : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'}`}
                         >
                             <Settings size={20} className={`transition-transform duration-500 ${showSettings ? 'rotate-180' : 'group-hover:rotate-90'}`} />
@@ -322,7 +318,7 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                             onClick={startBatchDownload}
                             disabled={selectedIds.size === 0 || downloading}
                             className={`
-                                btn-primary flex-1 md:flex-none px-4 md:px-6 py-2.5 md:py-3 rounded-xl flex items-center justify-center gap-2 md:gap-3 text-sm font-bold uppercase tracking-widest transition-all duration-300
+                                btn-primary flex-1 md:flex-none px-4 md:px-6 py-2.5 md:py-3 rounded-xl flex items-center cursor-pointer justify-center gap-2 md:gap-3 text-sm font-bold uppercase tracking-widest transition-all duration-300
                                 ${selectedIds.size === 0 ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:shadow-red-600/40 hover:shadow-lg'}
                             `}
                         >

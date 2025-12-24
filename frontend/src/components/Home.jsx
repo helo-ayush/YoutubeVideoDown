@@ -31,33 +31,39 @@ const Home = ({ onInfoFetched }) => {
                     Download <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-500">Fast.</span>
                 </h2>
                 <p className="text-gray-400 text-base md:text-xl leading-relaxed max-w-xs md:max-w-none mx-auto">
-                    The ultimate tool for high-quality video and playlist downloads.
+                    The ultimate tool for high-quality video and playlist and channel downloads.
                 </p>
             </div>
 
-            <div className="w-full max-w-3xl relative group px-4">
-                <div className="absolute -inset-1 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 hidden md:block"></div>
-                <div className="relative glass-panel rounded-2xl p-2 flex flex-col md:flex-row items-stretch md:items-center gap-2 transition-transform transform focus-within:scale-[1.01]">
-                    <div className="hidden md:block pl-4 text-gray-400">
+            <div className="w-full max-w-2xl relative group px-4">
+                {/* Ambient Glow */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-red-600 to-orange-600 rounded-full blur-[20px] opacity-40 group-hover:opacity-60 transition duration-1000 hidden md:block"></div>
+
+                {/* Main Bar Container */}
+                <div className="relative bg-[#0a0a0a]/90 backdrop-blur-xl ring-1 ring-white/10 rounded-3xl md:rounded-full p-2.5 flex flex-col md:flex-row items-center gap-2 md:gap-0 transition-transform transform focus-within:scale-[1.01] shadow-2xl">
+                    <div className="hidden md:flex pl-6 text-gray-500">
                         <Search size={22} />
                     </div>
+
                     <input
                         type="text"
-                        placeholder="Paste Link..."
-                        className="flex-1 bg-transparent border-none outline-none text-white px-4 py-4 text-base md:text-lg placeholder-gray-500 font-medium text-center md:text-left h-14 md:h-auto rounded-xl md:rounded-none bg-white/5 md:bg-transparent mb-2 md:mb-0"
+                        placeholder="Paste Youtube Link..."
+                        className="flex-1 w-full bg-transparent border-none outline-none text-white px-4 md:px-6 py-3.5 text-lg placeholder-gray-600 font-medium text-center md:text-left h-14 md:h-16 rounded-xl md:rounded-none bg-white/5 md:bg-transparent"
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleFetch(e)}
                     />
+
                     <button
                         onClick={handleFetch}
                         disabled={loading}
-                        className="btn-primary cursor-pointer w-full md:w-auto px-8 py-4 rounded-xl flex items-center justify-center gap-3 text-lg font-bold shadow-lg"
+                        className="btn-primary cursor-pointer w-full md:w-auto px-8 md:px-8 py-3.5 md:py-3 rounded-2xl md:rounded-full flex items-center justify-center gap-2.5 text-lg font-bold shadow-lg md:mr-2 hover:shadow-red-500/20 active:scale-95 transition-all
+                        bg-gradient-to-r from-red-600 to-orange-600 text-white"
                     >
-                        {loading ? <Loader2 className="animate-spin" size={24} /> : (
+                        {loading ? <Loader2 className="animate-spin" size={20} /> : (
                             <>
-                                <span className="md:hidden">Process Link</span>
-                                <span className="hidden md:inline">Process</span>
+                                <span className="md:hidden">Process Video</span>
+                                <span className="hidden md:inline whitespace-nowrap">Process</span>
                                 <ArrowRight size={20} />
                             </>
                         )}
