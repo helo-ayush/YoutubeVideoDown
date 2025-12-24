@@ -60,7 +60,8 @@ def get_opts(task_id, format_id='best'):
         'quiet': True,
         'noplaylist': True,
         'nocolor': True,
-        'force_ipv4': True, # FORCE IPv4 to fix DNS issues
+        'force_ipv4': True,
+        'extractor_args': {'youtube': {'player_client': ['android', 'web']}},  # Bypass bot detection
     }
     
     if format_id != 'audio':
@@ -237,6 +238,7 @@ def get_info():
             'playliststart': start_index,
             'playlistend': end_index,
             'force_ipv4': True,
+            'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -295,7 +297,12 @@ def get_info():
                     'has_more': len(entries) == PAGE_SIZE
                 })
             else:
-                with yt_dlp.YoutubeDL({'quiet': True, 'nocolor': True, 'force_ipv4': True}) as ydl_single:
+                with yt_dlp.YoutubeDL({
+                    'quiet': True,
+                    'nocolor': True,
+                    'force_ipv4': True,
+                    'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
+                }) as ydl_single:
                     info = ydl_single.extract_info(url, download=False)
                 
                 formats = []
@@ -511,7 +518,12 @@ def stream_video():
 
     try:
         # High-Speed Proxy Strategy (Thread Compatible)
-        with yt_dlp.YoutubeDL({'quiet': True, 'format': format_id, 'force_ipv4': True}) as ydl:
+        with yt_dlp.YoutubeDL({
+            'quiet': True,
+            'format': format_id,
+            'force_ipv4': True,
+            'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
+        }) as ydl:
             info = ydl.extract_info(url, download=False)
             playback_url = info.get('url')
             title = sanitize_filename(info.get('title', 'video'))
