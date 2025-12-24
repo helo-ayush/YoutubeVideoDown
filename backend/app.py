@@ -549,10 +549,10 @@ def download():
     format_id = data.get('format_id', 'best')
     
     task_id = str(uuid.uuid4())
-    sid = request.sid # Get socket ID
+    sid = data.get('sid') # Get socket ID from request body
     
     # Register task
-    if sid in client_tasks:
+    if sid and sid in client_tasks:
         client_tasks[sid].append(task_id)
     task_control[task_id] = {'abort': False}
     
@@ -655,14 +655,14 @@ def batch_download():
     quality_cap = data.get('quality_cap', None) # Integer (e.g., 1080) or None for best
     
     task_ids = []
-    sid = request.sid # Get socket ID of the requestor
+    sid = data.get('sid') # Get socket ID from request body
     
     for url in urls:
         task_id = str(uuid.uuid4())
         task_ids.append(task_id)
         
         # Register task for this client
-        if sid in client_tasks:
+        if sid and sid in client_tasks:
             client_tasks[sid].append(task_id)
         task_control[task_id] = {'abort': False}
         

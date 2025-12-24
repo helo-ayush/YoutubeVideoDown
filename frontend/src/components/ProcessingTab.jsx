@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Download, Loader, CheckCircle, AlertCircle, File, Clock, Wifi, Box, ArrowRight, Play, Zap } from 'lucide-react';
+import { Download, Loader, CheckCircle, AlertCircle, File, Clock, Wifi, Box, ArrowRight, Play, Zap, Database, MoreVertical, Pause } from 'lucide-react';
 
 const ProcessingTab = ({ tasks, markAsDownloaded }) => {
     const taskList = Object.values(tasks);
     const activeTasks = taskList.filter(t => t.status === 'downloading' || t.status === 'optimizing' || t.status === 'queued').length;
     const completedTasks = taskList.filter(t => t.status === 'finished').length;
+    const [scrolled, setScrolled] = useState(false);
 
     // Calculate precise total speed
     const [totalSpeed, setTotalSpeed] = useState('0 KB/s');
@@ -12,22 +13,24 @@ const ProcessingTab = ({ tasks, markAsDownloaded }) => {
         let speedVal = 0;
         taskList.forEach(t => {
             if (t.status === 'downloading' && t.speed) {
-                // Robust parsing using Regex to handle variations like "2.5MiB/s", " 2.5 MiB/s"
                 const match = t.speed.match(/([\d.]+)\s*([a-zA-Z]+)/);
                 if (match) {
                     let val = parseFloat(match[1]);
-                    const unit = match[2].toUpperCase(); // Normalize unit case
-
+                    const unit = match[2].toUpperCase();
                     if (unit.includes('M')) val *= 1024;
                     else if (unit.includes('K')) val *= 1;
-                    else if (unit.includes('G')) val *= 1024 * 1024; // Handle Gigabytes just in case
-
+                    else if (unit.includes('G')) val *= 1024 * 1024;
                     if (!isNaN(val)) speedVal += val;
                 }
             }
         });
         setTotalSpeed(speedVal > 1024 ? `${(speedVal / 1024).toFixed(1)} MB/s` : `${speedVal.toFixed(1)} KB/s`);
     }, [tasks]);
+
+    // Handle scroll for minimizing/hiding header if needed
+    const handleScroll = (e) => {
+        setScrolled(e.target.scrollTop > 20);
+    };
 
     // Format bytes helper
     const formatBytes = (bytes) => {
@@ -68,160 +71,130 @@ const ProcessingTab = ({ tasks, markAsDownloaded }) => {
     }
 
     return (
-        <div className="h-full flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-8 py-8">
-            {/* Header Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/20 p-6 group">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <Zap size={64} />
-                    </div>
-                    <div className="relative z-10">
-                        <div className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Active Tasks</div>
-                        <div className="text-4xl font-black text-white tracking-tight flex items-baseline gap-2">
-                            {activeTasks}
-                            <span className="text-sm font-medium text-blue-400">Processing</span>
+        <div className="h-full flex flex-col w-full relative overflow-hidden bg-[#050505af] rounded-3xl" onScroll={handleScroll}>
+            {/* Floating Cylindrical Stats Widget with Premium Glass Effect */}
+            <div className={`absolute top-4 bg-gradient-to-br from-[#181818] to-[#050505] rounded-full right-4 z-30 transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${scrolled ? 'transform translate-x-2' : ''}`}>
+                <div className={`
+                    glass-panel rounded-full flex items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/10
+                    bg-black/40 backdrop-blur-xl transition-all duration-300
+                    ${scrolled ? 'px-3 py-1.5' : 'px-5 py-2.5'}
+               `}>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                            </span>
+                            {!scrolled && <span className="text-[10px] font-bold text-gray-400 tracking-wider">ACTIVE</span>}
+                            <span className={`font-mono font-bold text-white ${scrolled ? 'text-xs' : 'text-sm'}`}>{activeTasks}</span>
+                        </div>
+                        <div className="w-px h-3 bg-white/10"></div>
+                        <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                            {!scrolled && <span className="text-[10px] font-bold text-gray-400 tracking-wider">SAVED</span>}
+                            <span className={`font-mono font-bold text-white ${scrolled ? 'text-xs' : 'text-sm'}`}>{completedTasks}</span>
+                        </div>
+                        <div className="w-px h-3 bg-white/10"></div>
+                        <div className="flex items-center gap-2 text-cyan-400">
+                            <Wifi size={scrolled ? 10 : 12} />
+                            <span className={`font-mono font-bold ${scrolled ? 'text-xs' : 'text-sm'}`}>{totalSpeed}</span>
                         </div>
                     </div>
-                    {/* Animated Glow */}
-                    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-transparent" />
-                </div>
-
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-900/20 to-black border border-green-500/20 p-6 group">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <CheckCircle size={64} />
-                    </div>
-                    <div className="relative z-10">
-                        <div className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Completed</div>
-                        <div className="text-4xl font-black text-white tracking-tight flex items-baseline gap-2">
-                            {completedTasks}
-                            <span className="text-sm font-medium text-green-400">Saved</span>
-                        </div>
-                    </div>
-                    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-transparent" />
-                </div>
-
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/20 to-black border border-purple-500/20 p-6 group">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <Wifi size={64} />
-                    </div>
-                    <div className="relative z-10">
-                        <div className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Network Speed</div>
-                        <div className="text-4xl font-black text-white tracking-tight flex items-baseline gap-2">
-                            {totalSpeed}
-                            <span className="text-sm font-medium text-purple-400">Total</span>
-                        </div>
-                    </div>
-                    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-transparent" />
                 </div>
             </div>
 
-            {/* Task List Header */}
-            <div className="flex items-center justify-between mb-4 px-2">
-                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Task Queue</h2>
-                <div className="h-px bg-white/10 flex-1 ml-4" />
-            </div>
+            {/* Scrolling Task List Container */}
+            <div className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-20 overflow-y-auto custom-scrollbar">
+                <div className="space-y-5">
+                    {taskList.map((task) => (
+                        <div
+                            key={task.taskId}
+                            className={`group relative rounded-2xl overflow-hidden transition-all duration-500
+                            ${task.status === 'finished'
+                                    ? 'bg-gradient-to-br from-[#222222] to-[#050505] border border-white/5 opacity-80 hover:opacity-100'
+                                    : 'bg-gradient-to-br from-[#121212] to-[#080808] border border-white/10 shadow-2xl hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)]'}`}
+                        >
+                            {/* Animated Gradient Glow Effect (Background) */}
+                            {task.status === 'downloading' && (
+                                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-blue-500/20 transition-colors duration-500" />
+                            )}
 
-            {/* List */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar -mr-2 pr-2 space-y-3 pb-20">
-                {taskList.map((task) => (
-                    <div
-                        key={task.taskId}
-                        className={`group relative rounded-xl border transition-all duration-300 overflow-hidden
-                        ${task.status === 'finished'
-                                ? 'bg-black/30 border-white/5 opacity-75 hover:opacity-100'
-                                : 'bg-black/40 border-white/10 hover:border-blue-500/30 hover:bg-blue-900/5'}`}
-                    >
-                        {/* Status Line Indicator */}
-                        <div className={`absolute left-0 top-0 bottom-0 w-1 transition-colors duration-300
-                            ${task.status === 'finished' ? 'bg-green-500' :
-                                task.status === 'error' ? 'bg-red-500' :
-                                    task.status === 'optimizing' ? 'bg-yellow-500' :
-                                        'bg-blue-500'}`}
-                        />
+                            {/* Card Content */}
+                            <div className="p-5 md:p-6 relative z-10 w-full">
+                                {/* Top Row: Title + Meta */}
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex gap-4 min-w-0 md:items-center items-start w-full">
 
-                        {/* Background Progress Fill */}
-                        {(task.status === 'downloading' || task.status === 'optimizing') && (
-                            <div
-                                className="absolute inset-0 bg-blue-500/5 pointer-events-none transition-all duration-300 z-0 origin-left"
-                                style={{ transform: `scaleX(${task.progress / 100})` }}
-                            />
-                        )}
+                                        {/* Text Info */}
+                                        <div className="min-w-0 flex-1">
+                                            <h3 className="text-base md:text-lg font-bold text-white leading-tight truncate pr-4 group-hover:text-blue-100 transition-colors" title={task.title || task.filename}>
+                                                {task.title || task.filename || 'Analyzing Video...'}
+                                            </h3>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border tracking-wide uppercase
+                                                    ${task.status === 'downloading' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                                        task.status === 'finished' ? 'bg-green-500/10 border-green-500/20 text-green-400' :
+                                                            task.status === 'optimizing' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500' :
+                                                                'bg-gray-800 border-gray-700 text-gray-400'
+                                                    }`}>
+                                                    {task.status}
+                                                </span>
+                                                <span className="text-xs text-gray-500 font-medium hidden md:inline-block">
+                                                    ID: <span className="font-mono text-gray-400">{task.taskId.slice(-4)}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                        <div className="p-4 pl-6 flex items-center gap-5 relative z-10">
-
-                            {/* Visual Status Icon */}
-                            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ring-2 ring-inset transition-all
-                                ${task.status === 'finished' ? 'ring-green-500/20 bg-green-500/10 text-green-400' :
-                                    task.status === 'error' ? 'ring-red-500/20 bg-red-500/10 text-red-500' :
-                                        'ring-blue-500/20 bg-blue-500/10 text-blue-400 animate-pulse-slow'}`}>
-                                {task.status === 'finished' ? <CheckCircle size={18} /> :
-                                    task.status === 'error' ? <AlertCircle size={18} /> :
-                                        task.status === 'queued' ? <Clock size={18} /> :
-                                            <Loader size={18} className="animate-spin" />}
-                            </div>
-
-                            <div className="flex-1 min-w-0 flex flex-col gap-1">
-                                <div className="flex justify-between items-center">
-                                    <h4 className="font-bold text-base text-gray-200 truncate pr-8 group-hover:text-white transition-colors" title={task.title || task.filename}>
-                                        {task.title && task.title !== 'Queued Video' ? task.title :
-                                            task.filename ? task.filename :
-                                                <span className="italic opacity-50">Waiting for details...</span>}
-                                    </h4>
-
-                                    {task.status === 'finished' ? (
-                                        <span className="text-[10px] font-bold text-green-500 bg-green-900/10 px-3 py-1 rounded-full border border-green-500/10">
-                                            COMPLETED
-                                        </span>
-                                    ) : (
-                                        <div className="font-mono font-bold text-sm text-blue-400 tabular-nums">
+                                {/* Progress Section */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-end text-xs font-medium">
+                                        <div className="flex items-center gap-3 text-gray-400">
+                                            {task.status === 'downloading' ? (
+                                                <>
+                                                    <span className="font-mono text-blue-400">{task.speed || '0 KB/s'}</span>
+                                                    <span className="hidden md:inline text-gray-600">•</span>
+                                                    <span className="font-mono text-gray-400">
+                                                        {task.downloaded_bytes && task.total_bytes
+                                                            ? `${formatBytes(task.downloaded_bytes)} / ${formatBytes(task.total_bytes)}`
+                                                            : 'Calculating size...'}
+                                                    </span>
+                                                </>
+                                            ) : task.status === 'finished' ? (
+                                                <span className="text-green-500">
+                                                    Download Complete
+                                                </span>
+                                            ) : (
+                                                <span>Processing...</span>
+                                            )}
+                                        </div>
+                                        <div className={`font-mono font-bold text-sm ${task.status === 'finished' ? 'text-green-400' : 'text-blue-400'}`}>
                                             {task.status === 'optimizing' ? '99%' : `${Math.round(task.progress)}%`}
                                         </div>
-                                    )}
-                                </div>
-
-                                <div className="flex items-center justify-between text-xs font-medium text-gray-500">
-                                    <div className="flex items-center gap-4">
-                                        <span className={`uppercase tracking-wider font-bold
-                                            ${task.status === 'finished' ? 'text-green-500' :
-                                                task.status === 'optimizing' ? 'text-yellow-500' :
-                                                    task.status === 'error' ? 'text-red-500' :
-                                                        'text-blue-500'}`}>
-                                            {task.status === 'optimizing' ? 'FINALIZING...' : task.status}
-                                        </span>
-
-                                        {(task.status === 'downloading' || task.status === 'optimizing') && (
-                                            <>
-                                                <span className="w-1 h-1 rounded-full bg-gray-700" />
-                                                <span className="flex items-center gap-1.5 text-gray-400 font-mono">
-                                                    <Wifi size={12} /> {task.speed || '0 KB/s'}
-                                                </span>
-                                                <span className="w-1 h-1 rounded-full bg-gray-700" />
-                                                <span className="flex items-center gap-1.5 text-gray-400 font-mono">
-                                                    <File size={12} />
-                                                    {task.downloaded_bytes && task.total_bytes
-                                                        ? `${formatBytes(task.downloaded_bytes)} / ${formatBytes(task.total_bytes)}`
-                                                        : 'Calculating...'}
-                                                </span>
-                                            </>
-                                        )}
-
-                                        {task.status === 'finished' && (
-                                            <>
-                                                <span className="w-1 h-1 rounded-full bg-gray-700" />
-                                                <span className="text-gray-500">{task.filename}</span>
-                                            </>
-                                        )}
                                     </div>
 
-                                    {/* Progress Bar Line for active details */}
-                                    <div className="w-32 h-1 bg-gray-800 rounded-full overflow-hidden ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div className={`h-full rounded-full ${task.status === 'finished' ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${task.progress}%` }} />
+                                    {/* Modern Progress Bar */}
+                                    <div className="h-2 w-full bg-[#1a1a1a] rounded-full overflow-hidden relative shadow-inner border border-white/5">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-300 relative
+                                                ${task.status === 'finished' ? 'bg-gradient-to-r from-green-600 to-green-400' :
+                                                    task.status === 'error' ? 'bg-red-500' :
+                                                        'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400'}`}
+                                            style={{ width: `${task.progress}%` }}
+                                        >
+                                            {/* Glowing Leading Edge */}
+                                            {task.status === 'downloading' && (
+                                                <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]" />
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
+                <div className="h-32 md:h-20" /> {/* Spacer */}
             </div>
         </div>
     );

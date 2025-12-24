@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Download, ArrowLeft, CheckSquare, ChevronLeft, ChevronRight, Filter, Settings, X, Check, PlayCircle } from 'lucide-react';
 
+import { socket } from '../App';
+
 const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) => {
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [downloading, setDownloading] = useState(false);
@@ -67,7 +69,8 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     urls: urlsToDownload,
-                    quality_cap: qualityCap
+                    quality_cap: qualityCap,
+                    sid: socket.id // Send socket ID for tracking
                 })
             });
             const respData = await res.json();
@@ -94,23 +97,23 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
     return (
         <div className="h-full flex flex-col relative">
             {/* Header Area */}
-            <div className="flex-shrink-0 px-6 py-4 z-30">
-                <div className="glass-panel rounded-2xl p-4 flex items-center justify-between border border-white/10 shadow-2xl backdrop-blur-xl bg-black/40">
-                    <div className="flex items-center gap-5">
+            <div className="flex-shrink-0 px-4 md:px-6 py-4 z-30">
+                <div className="glass-panel rounded-2xl p-3 md:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 border border-white/10 shadow-2xl backdrop-blur-xl bg-black/40">
+                    <div className="flex items-center gap-3 md:gap-5">
                         <button
                             onClick={onBack}
-                            className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-300 text-gray-400 hover:text-white hover:scale-105 active:scale-95 border border-white/5"
+                            className="p-2 md:p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-300 text-gray-400 hover:text-white hover:scale-105 active:scale-95 border border-white/5"
                         >
-                            <ArrowLeft size={20} />
+                            <ArrowLeft size={18} className="md:w-5 md:h-5" />
                         </button>
-                        <div>
-                            <h2 className="font-bold text-xl text-white flex items-center gap-3 tracking-tight">
-                                {data.title}
-                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/10 text-gray-400 uppercase tracking-wider border border-white/5">
+                        <div className="min-w-0 flex-1">
+                            <h2 className="font-bold text-lg md:text-xl text-white flex items-center gap-2 md:gap-3 tracking-tight truncate">
+                                <span className="truncate">{data.title}</span>
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white/10 text-gray-400 uppercase tracking-wider border border-white/5 flex-shrink-0">
                                     {data.type || 'Channel'}
                                 </span>
                             </h2>
-                            <p className="text-xs text-gray-400 font-medium mt-1 flex items-center gap-2">
+                            <p className="text-[10px] md:text-xs text-gray-400 font-medium mt-1 flex items-center gap-2">
                                 <span className={`w-1.5 h-1.5 rounded-full ${data.loading ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`} />
                                 {data.videos?.length || 0} items loaded • Page {data.page || 1}
                             </p>
@@ -118,12 +121,12 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                     </div>
 
                     {/* Premium Tab Switcher */}
-                    <div className="flex bg-black/60 rounded-xl p-1.5 border border-white/10 shadow-inner">
+                    <div className="flex bg-black/60 rounded-xl p-1 border border-white/10 shadow-inner w-full md:w-auto">
                         {['videos', 'shorts'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => handleTabChange(tab)}
-                                className={`relative px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider transition-all duration-300 overflow-hidden group flex items-center gap-2
+                                className={`relative flex-1 md:flex-none justify-center px-4 md:px-6 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-bold uppercase tracking-wider transition-all duration-300 overflow-hidden group flex items-center gap-2
                                     ${currentTab === tab
                                         ? 'text-white shadow-lg'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
@@ -132,7 +135,7 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                                 {currentTab === tab && (
                                     <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-500 rounded-lg -z-10 animate-fade-in" />
                                 )}
-                                {tab === 'videos' ? <PlayCircle size={14} className={currentTab === tab ? "fill-white/20" : ""} /> : <Filter size={14} />}
+                                {tab === 'videos' ? <PlayCircle size={12} className={`md:w-[14px] md:h-[14px] ${currentTab === tab ? "fill-white/20" : ""}`} /> : <Filter size={12} className="md:w-[14px] md:h-[14px]" />}
                                 {tab}
                             </button>
                         ))}
@@ -141,7 +144,7 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 min-h-0 relative px-6 pb-0">
+            <div className="flex-1 min-h-0 relative px-4 md:px-6 pb-0">
                 <div className="h-full rounded-t-3xl border-t border-x border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent backdrop-blur-sm overflow-hidden relative">
 
                     {/* Loading Overlay */}
@@ -237,31 +240,54 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
             </div>
 
             {/* Floating Action Bar */}
-            <div className="absolute bottom-6 left-0 right-0 px-6 z-40 pointer-events-none flex justify-center">
-                <div className="pointer-events-auto glass-panel rounded-2xl p-2 pl-4 pr-2 flex items-center gap-6 shadow-2xl border border-white/10 bg-black/60 backdrop-blur-xl transform translate-y-0 transition-all duration-500 animate-slide-up">
+            <div className="absolute bottom-4 md:bottom-6 left-0 right-0 px-4 md:px-6 z-40 pointer-events-none flex justify-center">
+                <div className="pointer-events-auto glass-panel rounded-2xl p-2 md:p-2 md:pl-4 md:pr-2 flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-6 shadow-2xl border border-white/10 bg-black/80 md:bg-black/60 backdrop-blur-xl transform translate-y-0 transition-all duration-500 animate-slide-up w-full md:w-auto">
 
-                    {/* Select All Toggle */}
-                    <div
-                        className="flex items-center gap-3 cursor-pointer group py-2"
-                        onClick={toggleSelectAll}
-                    >
-                        <div className={`w-10 h-6 rounded-full p-1 transition-all duration-300 ease-in-out flex items-center
-                            ${selectedIds.size > 0 && selectedIds.size === data.videos?.length ? 'bg-red-600 shadow-lg shadow-red-900/50' : 'bg-white/10 group-hover:bg-white/20 box-shadow-inner'}`}
+                    <div className="flex items-center justify-between md:justify-start gap-4">
+                        {/* Select All Toggle */}
+                        <div
+                            className="flex items-center gap-3 cursor-pointer group py-1 md:py-2"
+                            onClick={toggleSelectAll}
                         >
-                            <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-all duration-300 ease-out
-                                ${selectedIds.size > 0 && selectedIds.size === data.videos?.length ? 'translate-x-4 scale-110' : 'translate-x-0'}`}
-                            />
+                            <div className={`w-10 h-6 rounded-full p-1 transition-all duration-300 ease-in-out flex items-center
+                                ${selectedIds.size > 0 && selectedIds.size === data.videos?.length ? 'bg-red-600 shadow-lg shadow-red-900/50' : 'bg-white/10 group-hover:bg-white/20 box-shadow-inner'}`}
+                            >
+                                <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-all duration-300 ease-out
+                                    ${selectedIds.size > 0 && selectedIds.size === data.videos?.length ? 'translate-x-4 scale-110' : 'translate-x-0'}`}
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-bold text-white uppercase tracking-wide group-hover:text-red-400 transition-colors">Select All</span>
+                                <span className="text-[10px] text-gray-400 font-mono tracking-wider">{selectedIds.size} / {data.videos?.length || 0}</span>
+                            </div>
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-xs font-bold text-white uppercase tracking-wide group-hover:text-red-400 transition-colors">Select All</span>
-                            <span className="text-[10px] text-gray-400 font-mono tracking-wider">{selectedIds.size} / {data.videos?.length || 0}</span>
+
+                        {/* Pagination (Mobile: moved here) */}
+                        <div className="flex md:hidden items-center gap-1 border-l border-white/10 pl-4">
+                            <button
+                                onClick={() => handlePageChange('prev')}
+                                disabled={data.page <= 1 || data.loading}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 disabled:opacity-20 text-white"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <span className="w-8 text-center text-xs font-bold font-mono text-gray-300">
+                                {data.page}
+                            </span>
+                            <button
+                                onClick={() => handlePageChange('next')}
+                                disabled={!data.has_more || data.loading}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 disabled:opacity-20 text-white"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
                         </div>
                     </div>
 
-                    <div className="h-8 w-px bg-white/10" />
+                    <div className="hidden md:block h-8 w-px bg-white/10" />
 
-                    {/* Pagination */}
-                    <div className="flex items-center gap-1 border-r border-white/10 pr-6 mr-2">
+                    {/* Desktop Pagination */}
+                    <div className="hidden md:flex items-center gap-1 border-r border-white/10 pr-6 mr-2">
                         <button
                             onClick={() => handlePageChange('prev')}
                             disabled={data.page <= 1 || data.loading}
@@ -281,31 +307,33 @@ const ChannelFilter = ({ data, onBatchDownloadStarted, onBack, onFetchPage }) =>
                         </button>
                     </div>
 
-                    {/* Settings Button */}
-                    <button
-                        onClick={() => setShowSettings(!showSettings)}
-                        className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all duration-300 mr-2 group
-                        ${showSettings ? 'bg-white text-black' : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'}`}
-                    >
-                        <Settings size={20} className={`transition-transform duration-500 ${showSettings ? 'rotate-180' : 'group-hover:rotate-90'}`} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {/* Settings Button */}
+                        <button
+                            onClick={() => setShowSettings(!showSettings)}
+                            className={`w-12 h-10 md:h-12 flex items-center justify-center rounded-xl transition-all duration-300 md:mr-2 group flex-shrink-0
+                            ${showSettings ? 'bg-white text-black' : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'}`}
+                        >
+                            <Settings size={20} className={`transition-transform duration-500 ${showSettings ? 'rotate-180' : 'group-hover:rotate-90'}`} />
+                        </button>
 
-                    {/* Download Button */}
-                    <button
-                        onClick={startBatchDownload}
-                        disabled={selectedIds.size === 0 || downloading}
-                        className={`
-                            btn-primary px-6 py-3 rounded-xl flex items-center gap-3 text-sm font-bold uppercase tracking-widest transition-all duration-300
-                            ${selectedIds.size === 0 ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:shadow-red-600/40 hover:shadow-lg'}
-                        `}
-                    >
-                        {downloading ? (
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <Download size={18} className="animate-bounce" />
-                        )}
-                        <span>Download</span>
-                    </button>
+                        {/* Download Button */}
+                        <button
+                            onClick={startBatchDownload}
+                            disabled={selectedIds.size === 0 || downloading}
+                            className={`
+                                btn-primary flex-1 md:flex-none px-4 md:px-6 py-2.5 md:py-3 rounded-xl flex items-center justify-center gap-2 md:gap-3 text-sm font-bold uppercase tracking-widest transition-all duration-300
+                                ${selectedIds.size === 0 ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:shadow-red-600/40 hover:shadow-lg'}
+                            `}
+                        >
+                            {downloading ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <Download size={18} className="animate-bounce" />
+                            )}
+                            <span>Download</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 

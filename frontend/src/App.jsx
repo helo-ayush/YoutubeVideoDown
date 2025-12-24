@@ -6,7 +6,7 @@ import ChannelFilter from './components/ChannelFilter';
 import ProcessingTab from './components/ProcessingTab';
 import VideoOptions from './components/VideoOptions';
 
-const socket = io('http://localhost:5000');
+export const socket = io('http://localhost:5000');
 
 function App() {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -101,102 +101,123 @@ function App() {
         setTasks(prev => ({
             ...prev,
             [taskId]: {
-                status: 'starting',
+                status: 'queued',
                 progress: 0,
-                title: title,
-                thumbnail: thumbnail,
+                thumbnail: thumbnail, // Could be improved
+                title: title, // Passed from Options
                 taskId: taskId
             }
         }));
         setActiveTab('processing');
     };
 
-    const markAsDownloaded = (taskId) => {
-        setTasks(prev => ({
-            ...prev,
-            [taskId]: { ...prev[taskId], downloaded: true }
-        }));
-    };
-
     return (
-        <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#0a0a0a] text-white selection:bg-red-500/30">
-
-            {/* Dynamic Background */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                {/* Richer, darker background base */}
-                <div className="absolute inset-0 bg-[#050505]" />
-
-                {/* Animated Gradient Orbs */}
-                <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-red-600/10 rounded-full blur-[120px] animate-pulse-glow mix-blend-screen" />
-                <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-glow mix-blend-screen" style={{ animationDelay: '3s' }} />
-                <div className="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-900/5 rounded-full blur-[150px] animate-pulse-glow mix-blend-screen" style={{ animationDelay: '5s' }} />
-
-                {/* Noise Texture */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-150 contrast-150 mix-blend-overlay" />
-            </div>
-
-            {/* Fixed Navbar */}
-            <nav className="flex-shrink-0 relative z-50 glass-panel border-b border-white/5 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-red-600 to-red-800 rounded-xl shadow-lg shadow-red-900/50">
-                        <Zap className="text-white fill-current" size={24} />
+        <div className="flex h-screen bg-[#050505] text-white font-sans overflow-hidden">
+            {/* Desktop Sidebar */}
+            <div className="hidden md:flex flex-col rounded-4xl w-64 bg-black/40 backdrop-blur-xl border-r border-white/5 h-full fixed left-0 top-0 z-50">
+                <div className="p-8 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+                    <div className="flex items-center gap-2 text-2xl tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
+                        <Zap className="text-red-500 fill-red-500 " /> <span className='font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500'>YtDown</span>
                     </div>
-                    <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                        Tube<span className="text-red-500">Rip</span> Pro
-                    </h1>
                 </div>
 
-                <div className="flex bg-black/40 rounded-xl p-1.5 border border-white/5">
+                <nav className="flex-1 px-4 space-y-2">
                     <button
+                        align="left"
                         onClick={() => setActiveTab('dashboard')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300
-                  ${activeTab === 'dashboard' ? 'bg-white/10 text-white shadow-lg backdrop-blur-sm' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        className={`w-full flex items-center cursor-pointer gap-4 px-4 py-3 rounded-xl transition-all duration-300 font-medium
+                        ${activeTab === 'dashboard' ? 'bg-white/10 text-white shadow-lg shadow-white/5' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
                     >
-                        <LayoutDashboard size={18} />
-                        Dashboard
+                        <LayoutDashboard size={20} /> Dashboard
                     </button>
                     <button
+                        align="left"
                         onClick={() => setActiveTab('processing')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 relative
-                  ${activeTab === 'processing' ? 'bg-white/10 text-white shadow-lg backdrop-blur-sm' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        className={`w-full flex items-center cursor-pointer gap-4 px-4 py-3 rounded-xl transition-all duration-300 font-medium
+                        ${activeTab === 'processing' ? 'bg-blue-500/10 text-blue-400 shadow-lg shadow-blue-500/10' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
                     >
-                        <Activity size={18} />
-                        Processing
-                        {Object.values(tasks).some(t => t.status === 'downloading' || t.status === 'optimizing') && (
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <Activity size={20} />
+                        <span className="flex-1 text-left">Downloads</span>
+                        {Object.values(tasks).filter(t => t.status === 'downloading' || t.status === 'optimizing').length > 0 && (
+                            <span className="bg-blue-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                {Object.values(tasks).filter(t => t.status === 'downloading' || t.status === 'optimizing').length}
+                            </span>
                         )}
                     </button>
-                </div>
-            </nav>
+                </nav>
 
-            {/* Main Content Area - Non-scrolling container */}
-            <main className="flex-1 relative z-10 overflow-hidden flex flex-col">
-                {activeTab === 'dashboard' ? (
-                    !data ? (
-                        <Home onInfoFetched={setData} />
-                    ) : (
-                        data.type === 'video' ? (
-                            <VideoOptions
-                                data={data}
-                                onBack={() => setData(null)}
-                                onDownloadStarted={handleSingleDownloadStarted}
-                            />
+                <div className="p-4 border-t border-white/5">
+                    <div className="text-xs text-gray-500 text-center">
+                        Made by <a href="https://github.com/helo-ayush" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">helo-ayush</a>
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Content Wrapper (mb-16 for bottom nav) */}
+            <main className="flex-1 md:ml-64 h-full overflow-hidden relative pb-20 md:pb-0">
+                {/* Background ambient lighting */}
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
+                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-slow" />
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-red-600/5 rounded-full blur-[120px] animate-pulse-slow delay-1000" />
+                </div>
+
+                {/* Content Area */}
+                <div className="h-full overflow-y-auto custom-scrollbar relative z-10 p-4 md:p-8">
+                    {activeTab === 'dashboard' && (
+                        !data ? (
+                            <Home onInfoFetched={(info) => { setData(info); }} />
                         ) : (
-                            <ChannelFilter
-                                data={data}
-                                onBack={() => setData(null)}
-                                onBatchDownloadStarted={handleBatchStarted}
-                                onFetchPage={fetchChannelData}
-                            />
+                            data.type === 'playlist' || data.type === 'channel' ? (
+                                <ChannelFilter
+                                    data={data}
+                                    onBack={() => setData(null)}
+                                    onBatchDownload={handleBatchStarted}
+                                    onFetchPage={fetchChannelData}
+                                />
+                            ) : (
+                                <VideoOptions
+                                    data={data}
+                                    onBack={() => setData(null)}
+                                    onDownloadStarted={handleSingleDownloadStarted}
+                                />
+                            )
                         )
-                    )
-                ) : (
-                    <ProcessingTab
-                        tasks={tasks}
-                        markAsDownloaded={markAsDownloaded}
-                    />
-                )}
+                    )}
+
+                    {activeTab === 'processing' && (
+                        <ProcessingTab
+                            tasks={tasks}
+                            markAsDownloaded={(tid) => setTasks(prev => ({ ...prev, [tid]: { ...prev[tid], downloaded: true } }))}
+                        />
+                    )}
+                </div>
             </main>
+
+            {/* Mobile Bottom Navigation */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 flex items-center justify-around h-20 z-50 pb-2">
+                <button
+                    onClick={() => setActiveTab('dashboard')}
+                    className={`flex flex-col items-center justify-center w-full h-full gap-1 ${activeTab === 'dashboard' ? 'text-white' : 'text-gray-500'}`}
+                >
+                    <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-white/10' : ''}`}>
+                        <LayoutDashboard size={24} />
+                    </div>
+                    <span className="text-[10px] font-medium">Home</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('processing')}
+                    className={`flex flex-col items-center justify-center w-full h-full gap-1 ${activeTab === 'processing' ? 'text-blue-400' : 'text-gray-500'}`}
+                >
+                    <div className={`relative p-1.5 rounded-xl transition-all ${activeTab === 'processing' ? 'bg-blue-500/20' : ''}`}>
+                        <Activity size={24} />
+                        {Object.values(tasks).filter(t => t.status === 'downloading' || t.status === 'optimizing').length > 0 && (
+                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-black animate-pulse" />
+                        )}
+                    </div>
+                    <span className="text-[10px] font-medium">Downloads</span>
+                </button>
+            </div>
         </div>
     );
 }
